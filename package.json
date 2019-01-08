@@ -1,0 +1,18 @@
+{
+  "name": "transaction",
+  "version": "0.0.1",
+  "description": "Transaction Monad & Utils",
+  "main": "index.js",
+  "author": "Tosuke <tasukeprg@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@tosuke/prettier-config": "^1.0.1",
+    "jest": "^23.6.0",
+    "prettier": "^1.15.3",
+    "ts-jest": "^23.10.5",
+    "typescript": "^3.2.2"
+  }
+}
