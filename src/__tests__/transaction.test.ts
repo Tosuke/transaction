@@ -125,42 +125,76 @@ describe('Transaction', () => {
       })
     })
   })
-})
 
-describe('Transaction combinator', () => {
-  describe('.map()', () => {
-    it(`maps this Transactions's result to a different type.`, async () => {
-      const tx = Transaction.of(100).map(x => x + 1)
-      await expect(tx.run({})).resolves.toBe(101)
-    })
-  })
-  describe('.then()', () => {
-    it('executes another Transaction after this one has resolved successfully.', async () => {
-      const tx = Transaction.of(100).then(
-        x =>
-          new Transaction(async ctx => {
-            // do computation using the context
-            await delay(x)
-            return x + 1
-          }),
-      )
-      await expect(tx.run({})).resolves.toBe(101)
-    })
-  })
-  describe('.catch()', () => {
-    it('executes another Transaction if this one rejects with a error.', async () => {
-      const tx = Transaction.throw<string>(new Error('Error!!!')).catch(err => Transaction.of(err.message))
-      await expect(tx.run({})).resolves.toBe('Error!!!')
-    })
-  })
-  describe('.finally()', () => {
-    it('executes another Transaction after this one has resolved, regardless of the result.', async () => {
-      const mock = jest.fn()
-      const tx = Transaction.of(100).finally(async () => {
-        mock()
+  describe('Transaction is (almost) a Functor', () => {
+    describe('identify', () => {
+      test('with number', async () => {
+        const value = Math.random()
+        const tx1 = Transaction.of(value)
+        const tx2 = tx1.map(x => x)
+        // tx1 === tx2
+        const tx = Transaction.all(tx1, tx2).map(([x, y]) => x === y)
+        await expect(tx.exec(executor)).resolves.toBeTruthy()
       })
-      await expect(tx.run({})).resolves.toBe(100)
-      expect(mock).toBeCalled()
+    })
+    describe('associative', () => {
+      test('with number', async () => {
+        const value = Math.random()
+        const f: (x: number) => string = x => x.toString()
+        const g: (x: string) => { str: string } = x => ({ str: x })
+        
+        const tx0 = Transaction.of(value)
+        const tx1 = tx0.map(f).map(g)
+        const tx2 = tx0.map(x => g(f(x)))
+
+        // tx1 === tx2
+        const tx = Transaction.all(tx1, tx2).map(([x, y]) => x.str === y.str)
+        await expect(tx.exec(executor)).resolves.toBeTruthy()
+      })
+    })
+  })
+
+  describe('Transaction is (almost) a Monad', () => {
+    describe('leftIdentity', () => {
+      test('with number', async () => {
+        const value = Math.random()
+        const f = (x: number) => Transaction.of(x + 100)
+
+        const tx1 = Transaction.of(value).then(f)
+        const tx2 = f(value)
+
+        // tx1 === tx2
+        const tx = Transaction.all(tx1, tx2).map(([x,y]) => x === y)
+        await expect(tx.exec(executor)).resolves.toBeTruthy()
+      })
+    })
+    describe('rightIdentity', () => {
+      test('with number', async () => {
+        const value = Math.random()
+
+        const tx1 = Transaction.of(value)
+        const tx2 = tx1.then(x => Transaction.of(x))
+
+        // tx1 === tx2
+        const tx = Transaction.all(tx1, tx2).map(([x, y]) => x === y)
+        await expect(tx.exec(executor)).resolves.toBeTruthy()
+      })
+    })
+    describe('associativeBind', () => {
+      test('with number', async () => {
+        const value = Math.random()
+        const f = (x: number) => Transaction.of(x.toString())
+        const g = (x: string) => Transaction.of({ str: x })
+
+        const tx0 = Transaction.of(value)
+
+        const tx1 = tx0.then(f).then(g)
+        const tx2 = tx0.then(x => f(x).then(g))
+
+        // tx1 === tx2
+        const tx = Transaction.all(tx1, tx2).map(([x, y]) => x.str === y.str)
+        await expect(tx.exec(executor)).resolves.toBeTruthy()
+      })
     })
   })
 })
