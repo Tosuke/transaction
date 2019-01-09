@@ -1,4 +1,4 @@
-import { Transaction, TxPromise } from './transaction'
+import { Transaction } from './transaction'
 
 const NAME = '@@into_transaction@@'
 export const intoTransaction: unique symbol = Symbol(NAME)
@@ -22,6 +22,6 @@ Object.defineProperty(Promise.prototype, intoTransaction, {
   enumerable: false,
   writable: false,
   value() {
-    return new TxPromise<any, unknown>(this)
+    return new Transaction<any, unknown>(() => this)
   }
 })

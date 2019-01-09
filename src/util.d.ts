@@ -6,3 +6,5 @@ export type Subtype<TS extends any[]> = {
   1: Head<TS>,
   2: Head<TS> & Subtype<Tail<TS>>
 }[TS extends [] ? 0 : TS extends [any] ? 1 : 2]
+
+export type Uniontype<TS extends any[]> = TS[number]
