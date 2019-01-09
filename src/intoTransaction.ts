@@ -12,7 +12,7 @@ export function isIntoTransaction(x: any): x is IntoTransaction<any, unknown> {
 }
 
 declare global {
-  interface Promise<T> {
+  interface Promise<T> extends IntoTransaction<T, unknown> {
     [intoTransaction](): Transaction<T, unknown>
   }
 }

@@ -19,7 +19,7 @@ export class Transaction<T, Context = unknown> implements IntoTransaction<T, Con
     return this._f(context)
   }
 
-  [intoTransaction]() {
+  [intoTransaction](): Transaction<T, Context> {
     return this
   }
 
@@ -29,13 +29,13 @@ export class Transaction<T, Context = unknown> implements IntoTransaction<T, Con
     return new Transaction(() => Promise.resolve(value))
   }
 
-  static throw<T = never, Context = unknown>(err: any): Transaction<T, Context> {
+  static throw<T = unknown, Context = unknown>(err: any): Transaction<T, Context> {
     return new Transaction(() => Promise.reject(err))
   }
 
   static from<T, Context>(from: IntoTransaction<T, Context>): Transaction<T, Context> {
     if (!isIntoTransaction(from)) {
-      throw new TypeError("'from' is not IntoTransaction")
+      throw new TypeError('A provided value is not IntoTransaction')
     }
     return from[intoTransaction]()
   }
@@ -43,33 +43,21 @@ export class Transaction<T, Context = unknown> implements IntoTransaction<T, Con
   static all<Transactions extends IntoTransaction<any, any>[]>(
     ...transactions: Transactions
   ): Transaction<ExtractType<Transactions>, Subtype<ExtractContext<Transactions>>> {
-    return new Transaction<any, any>(ctx => Promise.all(transactions.map(tx => tx[intoTransaction]().run(ctx))))
+    return new Transaction<any, any>(ctx => Promise.all(transactions.map(tx => Transaction.from(tx).run(ctx))))
   }
 
   static race<Transactions extends IntoTransaction<any, any>[]>(
     ...transactions: Transactions
   ): Transaction<Uniontype<ExtractType<Transactions>>, Subtype<ExtractContext<Transactions>>> {
-    return new Transaction<any, any>(ctx => Promise.race(transactions.map(tx => tx[intoTransaction]().run(ctx))))
+    return new Transaction<any, any>(ctx => Promise.race(transactions.map(tx => Transaction.from(tx).run(ctx))))
   }
 
   then<U, ContextU>(onComplete: (x: T) => IntoTransaction<U, ContextU>): Transaction<U, Context & ContextU> {
-    return new Transaction(ctx =>
-      this.run(ctx).then(x =>
-        onComplete(x)
-          [intoTransaction]()
-          .run(ctx),
-      ),
-    )
+    return new Transaction(ctx => this.run(ctx).then(x => Transaction.from(onComplete(x)).run(ctx)))
   }
 
   catch<Context2>(onRejected: (err: any) => IntoTransaction<T, Context2>): Transaction<T, Context & Context2> {
-    return new Transaction(ctx =>
-      this.run(ctx).catch(e =>
-        onRejected(e)
-          [intoTransaction]()
-          .run(ctx),
-      ),
-    )
+    return new Transaction(ctx => this.run(ctx).catch(e => Transaction.from(onRejected(e)).run(ctx)))
   }
 
   finally<Context2>(onFinally: () => IntoTransaction<void, Context2>): Transaction<T, Context & Context2> {
@@ -77,7 +65,7 @@ export class Transaction<T, Context = unknown> implements IntoTransaction<T, Con
       try {
         return await this.run(ctx)
       } finally {
-        await onFinally()[intoTransaction]().run(ctx)
+        await Transaction.from(onFinally()).run(ctx)
       }
     })
   }
