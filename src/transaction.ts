@@ -1,4 +1,5 @@
 import { intoTransaction, IntoTransaction, isIntoTransaction } from './intoTransaction'
+import { TransactionExucutor } from './transactionExecutor'
 import { Subtype, Uniontype } from './util'
 
 type ExtractType<TS extends IntoTransaction<any, any>[]> = {
@@ -17,6 +18,10 @@ export class Transaction<T, Context = unknown> implements IntoTransaction<T, Con
 
   run(context: Context): Promise<T> {
     return this._f(context)
+  }
+
+  exec(executor: TransactionExucutor<Context>): Promise<T> {
+    return executor(this)
   }
 
   [intoTransaction](): Transaction<T, Context> {
