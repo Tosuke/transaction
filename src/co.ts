@@ -1,8 +1,14 @@
 import { Transaction } from './transaction'
 import { IntoTransaction, intoTransaction, isIntoTransaction } from './intoTransaction'
 
-export function co<T, Context>(generator: () => AsyncIterable<IntoTransaction<unknown, Context>>): Transaction<T, Context> {
-  return new Transaction<any, Context>(async ctx => {
+export function call<T, Context>(tx: IntoTransaction<T, Context>): IntoTransaction<T, Context> {
+  return {
+    [intoTransaction]: tx[intoTransaction].bind(tx)
+  }
+}
+
+export function co<T, Context>(generator: () => AsyncIterable<IntoTransaction<any, Context>>): Transaction<T, Context> {
+  return new Transaction<any, Context>(ctx => {
     const iter = generator()[Symbol.asyncIterator]()
     async function onFulfilled(res?: any): Promise<any> {
       return await next(await iter.next(res))
@@ -20,12 +26,12 @@ export function co<T, Context>(generator: () => AsyncIterable<IntoTransaction<un
       if (res.done) return res.value
       const tx = res.value
       if (isIntoTransaction(tx)) {
-        return tx[intoTransaction]().run(ctx).then(onFulfilled, onRejected)
+        return await Transaction.from(tx).run(ctx).then(onFulfilled, onRejected)
       } else {
         throw new TypeError(`You may only yield IntoTransaction, but the following object was passed: ${tx}`)
       }
     }
 
-    return await onFulfilled()
+    return onFulfilled()
   })
 }
