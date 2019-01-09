@@ -1,7 +1,7 @@
-import { Transaction } from './transaction'
-
 const NAME = '@@into_transaction@@'
-export const intoTransaction: unique symbol = Symbol(NAME)
+export const intoTransaction = Symbol(NAME)
+
+import { Transaction } from './transaction'
 
 export interface IntoTransaction<T, Context> {
   [intoTransaction](): Transaction<T, Context>
