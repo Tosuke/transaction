@@ -6,10 +6,14 @@
   "author": "Tosuke <tasukeprg@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "build": "tsc"
+    "dev": "jest --watch",
+    "test": "jest",
+    "build": "tsc -p tsconfig.build.json"
   },
   "devDependencies": {
     "@tosuke/prettier-config": "^1.0.1",
+    "@types/jest": "^23.3.12",
+    "@types/node": "^10.12.18",
     "jest": "^23.6.0",
     "prettier": "^1.15.3",
     "ts-jest": "^23.10.5",
