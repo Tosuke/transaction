@@ -1,4 +1,4 @@
-import { Transaction, TransactionExucutor, co, call} from '../index'
+import { Transaction, TransactionExucutor, co } from '../index'
 
 describe('co', () => {
   let executor: TransactionExucutor<{}>
@@ -9,11 +9,11 @@ describe('co', () => {
   it('combines Transactions', async () => {
     const tx = co<number, unknown>(async function*(): AsyncIterable<any> {
       const v0 = await Promise.resolve(2)
-      const v1 = yield call(Transaction.of(25))
+      const v1 = yield Transaction.of(25)
 
       let v2: number = 0
       try {
-        yield call(Transaction.throw(new Error()))
+        yield Transaction.throw(new Error())
       } catch {
         v2 = 2
       }

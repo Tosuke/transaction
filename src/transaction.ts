@@ -57,8 +57,11 @@ export class Transaction<T, Context = unknown> implements IntoTransaction<T, Con
     return new Transaction<any, any>(ctx => Promise.race(transactions.map(tx => Transaction.from(tx).run(ctx))))
   }
 
-  then<U, ContextU>(onComplete: (x: T) => IntoTransaction<U, ContextU>): Transaction<U, Context & ContextU> {
+  andThen<U, ContextU>(onComplete: (x: T) => IntoTransaction<U, ContextU>): Transaction<U, Context & ContextU> {
     return new Transaction(ctx => this.run(ctx).then(x => Transaction.from(onComplete(x)).run(ctx)))
+  }
+  chain<U, ContextU>(onComplete: (x: T) => IntoTransaction<U, ContextU>): Transaction<U, Context & ContextU> {
+    return this.andThen(onComplete)
   }
 
   catch<Context2>(onRejected: (err: any) => IntoTransaction<T, Context2>): Transaction<T, Context & Context2> {

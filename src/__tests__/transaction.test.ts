@@ -96,9 +96,9 @@ describe('Transaction', () => {
         await expect(tx.exec(executor)).resolves.toBe(101)
       })
     })
-    describe('.then()', () => {
+    describe('.andThen() & .chain()', () => {
       it('executes another Transaction after this one has resolved successfully.', async () => {
-        const tx = Transaction.of(100).then(
+        const tx = Transaction.of(100).chain(
           x =>
             new Transaction<number, Context>(async ctx => {
               // do computation using the context
@@ -160,11 +160,11 @@ describe('Transaction', () => {
         const value = Math.random()
         const f = (x: number) => Transaction.of(x + 100)
 
-        const tx1 = Transaction.of(value).then(f)
+        const tx1 = Transaction.of(value).chain(f)
         const tx2 = f(value)
 
         // tx1 === tx2
-        const tx = Transaction.all(tx1, tx2).map(([x,y]) => x === y)
+        const tx = Transaction.all(tx1, tx2).map(([x, y]) => x === y)
         await expect(tx.exec(executor)).resolves.toBeTruthy()
       })
     })
@@ -173,7 +173,7 @@ describe('Transaction', () => {
         const value = Math.random()
 
         const tx1 = Transaction.of(value)
-        const tx2 = tx1.then(x => Transaction.of(x))
+        const tx2 = tx1.chain(x => Transaction.of(x))
 
         // tx1 === tx2
         const tx = Transaction.all(tx1, tx2).map(([x, y]) => x === y)
@@ -188,8 +188,8 @@ describe('Transaction', () => {
 
         const tx0 = Transaction.of(value)
 
-        const tx1 = tx0.then(f).then(g)
-        const tx2 = tx0.then(x => f(x).then(g))
+        const tx1 = tx0.chain(f).chain(g)
+        const tx2 = tx0.chain(x => f(x).chain(g))
 
         // tx1 === tx2
         const tx = Transaction.all(tx1, tx2).map(([x, y]) => x.str === y.str)
