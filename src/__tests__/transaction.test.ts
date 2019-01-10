@@ -1,4 +1,4 @@
-import { Transaction, TransactionExucutor } from '../index'
+import { Transaction, TransactionExucutor, IntoTransaction } from '../index'
 
 function delay(ms: number): Promise<void> {
   return new Promise(r => {
@@ -128,28 +128,58 @@ describe('Transaction', () => {
 
   describe('Transaction is (almost) a Functor', () => {
     describe('identify', () => {
-      test('with number', async () => {
-        const value = Math.random()
+      async function identify<T>(value: T): Promise<void> {
         const tx1 = Transaction.of(value)
         const tx2 = tx1.map(x => x)
-        // tx1 === tx2
-        const tx = Transaction.all(tx1, tx2).map(([x, y]) => x === y)
-        await expect(tx.exec(executor)).resolves.toBeTruthy()
+
+        await expect(tx1.exec(executor)).resolves.toEqual(value)
+        await expect(tx2.exec(executor)).resolves.toEqual(value)
+      }
+      test('with number', () => {
+        return identify(100)
       })
+      test('with Transaction', () => {
+        return identify(Transaction.of(100))
+      })
+      /* test('with Promise', () => {
+        return identify(Promise.resolve(100))
+      }) */
     })
     describe('associative', () => {
-      test('with number', async () => {
-        const value = Math.random()
-        const f: (x: number) => string = x => x.toString()
-        const g: (x: string) => { str: string } = x => ({ str: x })
-        
+      async function associative<S, T, U>(
+        value: S,
+        f: (x: S) => T,
+        g: (x: T) => U,
+        asserteq: (expected: U, actual: U) => Promise<void>,
+      ): Promise<void> {
         const tx0 = Transaction.of(value)
         const tx1 = tx0.map(f).map(g)
         const tx2 = tx0.map(x => g(f(x)))
 
-        // tx1 === tx2
-        const tx = Transaction.all(tx1, tx2).map(([x, y]) => x.str === y.str)
-        await expect(tx.exec(executor)).resolves.toBeTruthy()
+        const z = g(f(value))
+        await asserteq(await tx1.exec(executor), z)
+        await asserteq(await tx2.exec(executor), z)
+      }
+
+      test('with number', () => {
+        return associative(
+          100,
+          x => x.toString(),
+          x => ({ str: x }),
+          async (e, a) => {
+            expect(e).toEqual(a)
+          },
+        )
+      })
+      test('with Transaction', () => {
+        return associative(
+          Transaction.of(100),
+          x => x.map(y => y.toString()),
+          x => x.map(y => ({ str: y })),
+          async (e, a) => {
+            await expect(e.exec(executor)).resolves.toEqual(await a.exec(executor))
+          },
+        )
       })
     })
   })
