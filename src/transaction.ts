@@ -1,4 +1,5 @@
-import { intoTransaction, IntoTransaction, isIntoTransaction } from './intoTransaction'
+import { intoTransaction } from './intoTransactionSymbol'
+import { IntoTransaction, isIntoTransaction } from './intoTransaction'
 import { TransactionExecutor } from './transactionExecutor'
 import { Loop } from './loop'
 import { Subtype, Uniontype } from './util'
