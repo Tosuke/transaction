@@ -1,4 +1,4 @@
-import { Transaction, TransactionExucutor, IntoTransaction } from '../index'
+import { Transaction, TransactionExucutor, loopBreak, loopContinue } from '../index'
 
 function delay(ms: number): Promise<void> {
   return new Promise(r => {
@@ -50,6 +50,20 @@ describe('Transaction', () => {
       it('creates a Transaction from a IntoTransaction.', async () => {
         const tx = Transaction.from(Promise.resolve(100))
         await expect(tx.exec(executor)).resolves.toBe(100)
+      })
+    })
+    describe('.fromLoop()', () => {
+      it('creates a Transaction from a tail-recursive loop.', async () => {
+        const array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        function $<TS extends any[]>(...xs: TS): TS {
+          return xs
+        }
+        const tx = Transaction.fromLoop($(0, array.values()), ([n, iter]) => {
+          const res = iter.next()
+          if (res.done) return Transaction.of(loopBreak(n))
+          return Transaction.of(loopContinue($(n + res.value, iter)))
+        })
+        await expect(tx.exec(executor)).resolves.toBe(55)
       })
     })
     describe('.all()', () => {

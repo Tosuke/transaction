@@ -1,5 +1,6 @@
 import { intoTransaction, IntoTransaction, isIntoTransaction } from './intoTransaction'
 import { TransactionExecutor } from './transactionExecutor'
+import { Loop } from './loop'
 import { Subtype, Uniontype } from './util'
 
 type ExtractType<TS extends IntoTransaction<any, any>[]> = {
@@ -39,10 +40,29 @@ export class Transaction<T, Context = unknown> implements IntoTransaction<T, Con
   }
 
   static from<T, Context>(from: IntoTransaction<T, Context>): Transaction<T, Context> {
+    if (from instanceof Transaction) {
+      return from
+    }
+
     if (!isIntoTransaction(from)) {
       throw new TypeError('A provided value is not IntoTransaction')
     }
+
     return from[intoTransaction]()
+  }
+
+  static fromLoop<S, T, Context>(initial: S, func: (state: S) => IntoTransaction<Loop<S, T>, Context>): Transaction<T, Context> {
+    return new Transaction<T, Context>(async ctx => {
+      let state: S = initial
+      while(true) {
+        const loop = await Transaction.from(func(state)).run(ctx)
+        if (loop.type === 'continue') {
+          state = loop.value
+        } else {
+          return loop.value
+        }
+      }
+    })
   }
 
   static all<Transactions extends IntoTransaction<any, any>[]>(
