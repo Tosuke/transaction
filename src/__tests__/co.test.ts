@@ -6,20 +6,19 @@ describe('co', () => {
     executor = tx => tx.run({})
   })
 
-  it('combines Transactions', async () => {
-    const tx = co<number, unknown>(async function*(): AsyncIterable<any> {
-      const v0 = await Promise.resolve(2)
-      const v1 = yield Transaction.of(25)
-
-      let v2: number = 0
-      try {
-        yield Transaction.throw(new Error())
-      } catch {
-        v2 = 2
-      }
-
-      return v0 * v1 * v2
+  it('combines two Transactions', async () => {
+    const tx = co<number, unknown>(async function*() {
+      const v1 = yield Transaction.of(50)
+      const v2 = yield Transaction.of(2)
+      return Transaction.of(v1 * v2)
     })
     await expect(tx.exec(executor)).resolves.toBe(100)
+  })
+
+  it('creates a Transaction which throws when a internal Transaction throws', async () => {
+    const tx = co<never, unknown>(async function*() {
+      yield Transaction.throw(new Error('Error!!!'))
+    })
+    await expect(tx.exec(executor)).rejects.toEqual(new Error('Error!!!'))
   })
 })

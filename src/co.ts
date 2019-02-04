@@ -1,37 +1,49 @@
 import { Transaction } from './transaction'
-import { IntoTransaction, intoTransaction, isIntoTransaction } from './intoTransaction'
+import { loopBreak, loopContinue } from './loop'
+import { IntoTransaction, isIntoTransaction } from './intoTransaction'
 
-export function call<T, Context>(tx: IntoTransaction<T, Context>): IntoTransaction<T, Context> {
-  return {
-    [intoTransaction]: tx[intoTransaction].bind(tx)
-  }
+interface State<C> {
+  value: unknown
+  error: Error | null
+  iter: AsyncIterator<IntoTransaction<unknown, C>>
 }
 
-export function co<T, Context>(generator: () => AsyncIterable<IntoTransaction<any, Context>>): Transaction<T, Context> {
-  return new Transaction<any, Context>(ctx => {
-    const iter = generator()[Symbol.asyncIterator]()
-    async function onFulfilled(res?: any): Promise<any> {
-      return await next(await iter.next(res))
-    }
-
-    async function onRejected(err: any): Promise<any> {
-      if (iter.throw != null) {
-        return await next(await iter.throw(err))
-      } else {
-        throw err
-      }
-    }
-
-    async function next(res: IteratorResult<IntoTransaction<unknown, Context>>): Promise<any> {
-      if (res.done) return res.value
-      const tx = res.value
-      if (isIntoTransaction(tx)) {
-        return await Transaction.from(tx).run(ctx).then(onFulfilled, onRejected)
-      } else {
-        throw new TypeError(`You may only yield IntoTransaction, but the following object was passed: ${tx}`)
-      }
-    }
-
-    return onFulfilled()
-  })
+export function co<T, Context>(
+  generator: () => AsyncIterable<IntoTransaction<unknown, Context>>,
+): Transaction<T, Context> {
+  const initial: State<Context> = {
+    value: undefined,
+    error: null,
+    iter: generator()[Symbol.asyncIterator](),
+  }
+  return Transaction.fromLoop(
+    initial,
+    ({ iter, value, error }) =>
+      new Transaction(async ctx => {
+        let res: IteratorResult<IntoTransaction<unknown, Context>>
+        if (error) {
+          res = await iter.throw!(error)
+        } else {
+          res = await iter.next(value)
+        }
+        
+        try {
+          const newValue = await Transaction.from(res.value).run(ctx)
+          if (res.done) {
+            return loopBreak(newValue as T)
+          }
+          return loopContinue({
+            value: newValue,
+            error: null,
+            iter,
+          })
+        } catch (err) {
+          return loopContinue({
+            value: undefined,
+            error: err,
+            iter,
+          })
+        }
+      }),
+  )
 }
