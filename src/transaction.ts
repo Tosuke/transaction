@@ -51,10 +51,13 @@ export class Transaction<T, Context = unknown> implements IntoTransaction<T, Con
     return from[intoTransaction]()
   }
 
-  static fromLoop<S, T, Context>(initial: S, func: (state: S) => IntoTransaction<Loop<S, T>, Context>): Transaction<T, Context> {
+  static fromLoop<S, T, Context>(
+    initial: S,
+    func: (state: S) => IntoTransaction<Loop<S, T>, Context>,
+  ): Transaction<T, Context> {
     return new Transaction<T, Context>(async ctx => {
       let state: S = initial
-      while(true) {
+      while (true) {
         const loop = await Transaction.from(func(state)).run(ctx)
         if (loop.type === 'continue') {
           state = loop.value
@@ -77,11 +80,8 @@ export class Transaction<T, Context = unknown> implements IntoTransaction<T, Con
     return new Transaction<any, any>(ctx => Promise.race(transactions.map(tx => Transaction.from(tx).run(ctx))))
   }
 
-  andThen<U, ContextU>(onComplete: (x: T) => IntoTransaction<U, ContextU>): Transaction<U, Context & ContextU> {
-    return new Transaction(ctx => this.run(ctx).then(x => Transaction.from(onComplete(x)).run(ctx)))
-  }
   chain<U, ContextU>(onComplete: (x: T) => IntoTransaction<U, ContextU>): Transaction<U, Context & ContextU> {
-    return this.andThen(onComplete)
+    return new Transaction(ctx => this.run(ctx).then(x => Transaction.from(onComplete(x)).run(ctx)))
   }
 
   catch<Context2>(onRejected: (err: any) => IntoTransaction<T, Context2>): Transaction<T, Context & Context2> {
