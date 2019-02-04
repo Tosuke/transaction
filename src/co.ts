@@ -8,9 +8,23 @@ interface State<C> {
   iter: AsyncIterator<IntoTransaction<unknown, C>>
 }
 
-export function co<T, Context>(
-  generator: () => AsyncIterable<IntoTransaction<unknown, Context>>,
+type Generator<C> = () => AsyncIterable<IntoTransaction<unknown, C>>
+
+export function co<T>(): <Context>(generator: Generator<Context>) => Transaction<T, Context>
+export function co<T, Context>(generator: Generator<Context>): Transaction<T, Context>
+export function co<T, Context>(generator?: Generator<Context>): unknown {
+  if (generator === undefined) {
+    return coImpl
+  } else {
+    return coImpl(generator)
+  }
+}
+
+
+function coImpl<T, Context>(
+  generator: Generator<Context>,
 ): Transaction<T, Context> {
+
   const initial: State<Context> = {
     value: undefined,
     error: null,
@@ -26,7 +40,7 @@ export function co<T, Context>(
         } else {
           res = await iter.next(value)
         }
-        
+
         try {
           const newValue = await Transaction.from(res.value).run(ctx)
           if (res.done) {
