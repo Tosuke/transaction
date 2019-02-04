@@ -15,6 +15,13 @@ describe('co', () => {
     await expect(tx.exec(executor)).resolves.toBe(100)
   })
 
+  test('error', async () => {
+    const tx = co<never>()(async function*() {
+      yield Transaction.throw(new Error('Error!!!'))
+    })
+    await expect(tx.exec(executor)).rejects.toEqual(new Error('Error!!!'))
+  })
+
   test('throw', async () => {
     const tx = co<never>()(async function*() {
       throw new Error('Error!!!')
