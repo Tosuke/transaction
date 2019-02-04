@@ -20,11 +20,7 @@ export function co<T, Context>(generator?: Generator<Context>): unknown {
   }
 }
 
-
-function coImpl<T, Context>(
-  generator: Generator<Context>,
-): Transaction<T, Context> {
-
+function coImpl<T, Context>(generator: Generator<Context>): Transaction<T, Context> {
   const initial: State<Context> = {
     value: undefined,
     error: null,
