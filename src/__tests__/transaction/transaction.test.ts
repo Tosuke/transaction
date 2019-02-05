@@ -48,7 +48,7 @@ describe('Transaction', () => {
     })
     describe('.catch()', () => {
       it('executes another Transaction if this one rejects with a error.', async () => {
-        const tx = throwError<string>(new Error('Error!!!')).catch(err => of(err.message))
+        const tx = throwError(new Error('Error!!!')).catch(err => of(err.message))
         await expect(tx.exec(executor)).resolves.toBe('Error!!!')
       })
     })

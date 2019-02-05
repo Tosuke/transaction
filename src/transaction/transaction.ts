@@ -26,7 +26,7 @@ export class Transaction<T, Context = unknown> implements IntoTransaction<T, Con
     return new Transaction(ctx => this.run(ctx).then(x => from(onComplete(x)).run(ctx)))
   }
 
-  catch<Context2>(onRejected: (err: any) => IntoTransaction<T, Context2>): Transaction<T, Context & Context2> {
+  catch<U, ContextU>(onRejected: (err: any) => IntoTransaction<U, ContextU>): Transaction<T | U, Context & ContextU> {
     return new Transaction(ctx => this.run(ctx).catch(e => from(onRejected(e)).run(ctx)))
   }
 
