@@ -11,14 +11,12 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "fmt": "prettier --write \"src/**/*.ts\"",
-    "coverage": "run-s coverage:jest coverage:codecov",
-    "coverage:jest": "jest --coverage",
-    "coverage:codecov": "codecov"
+    "coverage": "jest --coverage",
+    "codecov": "codecov"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "run-s test",
-      "pre-push": "run-s test coverage"
+      "pre-commit": "run-s test"
     }
   },
   "devDependencies": {
