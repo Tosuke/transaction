@@ -8,11 +8,12 @@
   "scripts": {
     "dev": "jest --watch",
     "test": "jest",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "fmt": "prettier --write \"src/**/*.ts\"",
     "coverage": "run-s coverage:jest coverage:codecov",
     "coverage:jest": "jest --coverage",
-    "coverage:codecov": "codecov",
-    "build": "tsc -p tsconfig.build.json",
-    "fmt": "prettier --write \"src/**/*.ts\""
+    "coverage:codecov": "codecov"
   },
   "husky": {
     "hooks": {
