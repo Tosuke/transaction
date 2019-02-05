@@ -1,4 +1,4 @@
-import { Transaction, TransactionExucutor, of, from } from '../index'
+import { TransactionExucutor, of, from } from '../index'
 
 describe('IntoTransaction', () => {
   let executor: TransactionExucutor<{}>

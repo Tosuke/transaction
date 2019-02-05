@@ -1,4 +1,4 @@
-import { Transaction, TransactionExucutor, of, throwError, join, select } from '../../index'
+import { Transaction, TransactionExucutor, withContext, of, throwError, join} from '../../index'
 
 function delay(ms: number): Promise<void> {
   return new Promise(r => {
@@ -24,38 +24,42 @@ describe('Transaction', () => {
     }
   })
 
+  function testTx<T>(tx: Transaction<T, Context>): Promise<T> {
+    return tx.exec(executor)
+  }
+
   describe('combinator', () => {
     describe('.map()', () => {
       it(`maps this Transactions's result to a different type.`, async () => {
         const tx = of(100).map(x => x + 1)
-        await expect(tx.exec(executor)).resolves.toBe(101)
+        await expect(testTx(tx)).resolves.toBe(101)
       })
     })
-    describe('.andThen() & .chain()', () => {
+    describe('.chain()', () => {
       it('executes another Transaction after this one has resolved successfully.', async () => {
         const tx = of(100).chain(
           x =>
-            new Transaction<number, Context>(async ctx => {
+            withContext<Context>()(async ctx => {
               // do computation using the context
               ctx.mock()
               await delay(x)
               return x + 1
             }),
         )
-        await expect(tx.exec(executor)).resolves.toBe(101)
+        await expect(testTx(tx)).resolves.toBe(101)
         expect(txMock).toBeCalled()
       })
     })
     describe('.catch()', () => {
       it('executes another Transaction if this one rejects with a error.', async () => {
         const tx = throwError(new Error('Error!!!')).catch(err => of(err.message))
-        await expect(tx.exec(executor)).resolves.toBe('Error!!!')
+        await expect(testTx(tx)).resolves.toBe('Error!!!')
       })
     })
     describe('.finally()', () => {
       it('executes another Transaction after this one has resolved, regardless of the result.', async () => {
         const tx = of(100).finally<Context>(() => new Transaction(async ctx => ctx.mock()))
-        await expect(tx.exec(executor)).resolves.toBe(100)
+        await expect(testTx(tx)).resolves.toBe(100)
         expect(txMock).toBeCalled()
       })
     })
@@ -67,8 +71,8 @@ describe('Transaction', () => {
         const tx1 = of(value)
         const tx2 = tx1.map(x => x)
 
-        await expect(tx1.exec(executor)).resolves.toEqual(value)
-        await expect(tx2.exec(executor)).resolves.toEqual(value)
+        await expect(testTx(tx1)).resolves.toEqual(value)
+        await expect(testTx(tx2)).resolves.toEqual(value)
       }
       test('with number', () => {
         return identify(100)
@@ -92,8 +96,8 @@ describe('Transaction', () => {
         const tx2 = tx0.map(x => g(f(x)))
 
         const z = g(f(value))
-        await asserteq(await tx1.exec(executor), z)
-        await asserteq(await tx2.exec(executor), z)
+        await asserteq(await testTx(tx1), z)
+        await asserteq(await testTx(tx2), z)
       }
 
       test('with number', () => {
@@ -112,7 +116,7 @@ describe('Transaction', () => {
           x => x.map(y => y.toString()),
           x => x.map(y => ({ str: y })),
           async (e, a) => {
-            await expect(e.exec(executor)).resolves.toEqual(await a.exec(executor))
+            await expect(testTx(e)).resolves.toEqual(await testTx(a))
           },
         )
       })
@@ -130,7 +134,7 @@ describe('Transaction', () => {
 
         // tx1 === tx2
         const tx = join(tx1, tx2).map(([x, y]) => x === y)
-        await expect(tx.exec(executor)).resolves.toBeTruthy()
+        await expect(testTx(tx)).resolves.toBeTruthy()
       })
     })
     describe('rightIdentity', () => {
@@ -142,7 +146,7 @@ describe('Transaction', () => {
 
         // tx1 === tx2
         const tx = join(tx1, tx2).map(([x, y]) => x === y)
-        await expect(tx.exec(executor)).resolves.toBeTruthy()
+        await expect(testTx(tx)).resolves.toBeTruthy()
       })
     })
     describe('associativeBind', () => {
@@ -158,7 +162,7 @@ describe('Transaction', () => {
 
         // tx1 === tx2
         const tx = join(tx1, tx2).map(([x, y]) => x.str === y.str)
-        await expect(tx.exec(executor)).resolves.toBeTruthy()
+        await expect(testTx(tx)).resolves.toBeTruthy()
       })
     })
   })

@@ -1,4 +1,4 @@
-import { Transaction, TransactionExucutor, of, throwError , co } from '../index'
+import { TransactionExucutor, of, throwError , co } from '../index'
 
 describe('co', () => {
   let executor: TransactionExucutor<{}>
