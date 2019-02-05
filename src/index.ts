@@ -1,6 +1,6 @@
 import './intoTransactionImpl'
 
-export { Transaction } from './transaction'
+export { Transaction, withContext, of, throwError, from, fromLoop, join, select } from './transaction'
 export { intoTransaction } from './intoTransactionSymbol'
 export { isIntoTransaction, IntoTransaction } from './intoTransaction'
 export { TransactionExecutor as TransactionExucutor } from './transactionExecutor'

@@ -1,4 +1,4 @@
-import { Transaction, TransactionExucutor } from '../index'
+import { Transaction, TransactionExucutor, of, from } from '../index'
 
 describe('IntoTransaction', () => {
   let executor: TransactionExucutor<{}>
@@ -7,13 +7,13 @@ describe('IntoTransaction', () => {
   })
 
   test('Transaction is IntoTransaction', async () => {
-    const it = Transaction.of(100)
-    const tx = Transaction.from(it)
+    const it = of(100)
+    const tx = from(it)
     await expect(tx.exec(executor)).resolves.toBe(100)
   })
   test('Promise is IntoTransaction', async () => {
     const it = Promise.resolve(100)
-    const tx = Transaction.from(it)
+    const tx = from(it)
     await expect(tx.exec(executor)).resolves.toBe(100)
   })
 })

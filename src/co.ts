@@ -1,6 +1,6 @@
-import { Transaction } from './transaction'
+import { Transaction, from, fromLoop } from './transaction'
 import { loopBreak, loopContinue } from './loop'
-import { IntoTransaction, isIntoTransaction } from './intoTransaction'
+import { IntoTransaction } from './intoTransaction'
 
 interface State<C> {
   value: unknown
@@ -26,7 +26,7 @@ function coImpl<T, Context>(generator: Generator<Context>): Transaction<T, Conte
     error: null,
     iter: generator()[Symbol.asyncIterator](),
   }
-  return Transaction.fromLoop(
+  return fromLoop(
     initial,
     ({ iter, value, error }) =>
       new Transaction(async ctx => {
@@ -38,7 +38,7 @@ function coImpl<T, Context>(generator: Generator<Context>): Transaction<T, Conte
         }
 
         try {
-          const newValue = await Transaction.from(res.value).run(ctx)
+          const newValue = await from(res.value).run(ctx)
           if (res.done) {
             return loopBreak(newValue as T)
           }
