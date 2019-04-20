@@ -31,7 +31,7 @@ describe('Transaction', () => {
   describe('combinator', () => {
     describe('.map()', () => {
       it(`maps this Transactions's result to a different type.`, async () => {
-        const tx = of(100).map(x => x + 1)
+        const tx = of(100).map(x => x + 1) as Transaction<number, {}>
         await expect(testTx(tx)).resolves.toBe(101)
       })
     })
