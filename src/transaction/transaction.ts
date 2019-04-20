@@ -14,8 +14,8 @@ export class Transaction<T, Context = unknown> implements IntoTransaction<T, Con
     return this._f(context)
   }
 
-  exec(executor: TransactionExecutor<Context>): Promise<T> {
-    return executor(this)
+  exec<C extends Context>(executor: TransactionExecutor<C>): Promise<T> {
+    return executor(this as any)
   }
 
   [intoTransaction](): Transaction<T, Context> {

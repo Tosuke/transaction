@@ -31,7 +31,7 @@ describe('Transaction', () => {
   describe('combinator', () => {
     describe('.map()', () => {
       it(`maps this Transactions's result to a different type.`, async () => {
-        const tx = of(100).map(x => x + 1)
+        const tx = of(100).map(x => x + 1) as Transaction<number, {}>
         await expect(testTx(tx)).resolves.toBe(101)
       })
     })
@@ -71,8 +71,8 @@ describe('Transaction', () => {
         const tx1 = of(value)
         const tx2 = tx1.map(x => x)
 
-        await expect(testTx(tx1)).resolves.toEqual(value)
-        await expect(testTx(tx2)).resolves.toEqual(value)
+        await expect(tx1.exec(executor)).resolves.toEqual(value)
+        await expect(tx1.exec(executor)).resolves.toEqual(value)
       }
       test('with number', () => {
         return identify(100)
@@ -96,8 +96,8 @@ describe('Transaction', () => {
         const tx2 = tx0.map(x => g(f(x)))
 
         const z = g(f(value))
-        await asserteq(await testTx(tx1), z)
-        await asserteq(await testTx(tx2), z)
+        await asserteq(await tx1.exec(executor), z)
+        await asserteq(await tx2.exec(executor), z)
       }
 
       test('with number', () => {
