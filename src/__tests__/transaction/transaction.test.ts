@@ -1,4 +1,4 @@
-import { Transaction, TransactionExucutor, withContext, of, throwError, join} from '../../index'
+import { Transaction, TransactionExucutor, withContext, of, throwError, join } from '../../index'
 
 function delay(ms: number): Promise<void> {
   return new Promise(r => {
@@ -31,20 +31,19 @@ describe('Transaction', () => {
   describe('combinator', () => {
     describe('.map()', () => {
       it(`maps this Transactions's result to a different type.`, async () => {
-        const tx = of(100).map(x => x + 1) as Transaction<number, {}>
+        const tx = of(100).map(x => x + 1)
         await expect(testTx(tx)).resolves.toBe(101)
       })
     })
     describe('.chain()', () => {
       it('executes another Transaction after this one has resolved successfully.', async () => {
-        const tx = of(100).chain(
-          x =>
-            withContext<Context>()(async ctx => {
-              // do computation using the context
-              ctx.mock()
-              await delay(x)
-              return x + 1
-            }),
+        const tx = of(100).chain(x =>
+          withContext<Context>()(async ctx => {
+            // do computation using the context
+            ctx.mock()
+            await delay(x)
+            return x + 1
+          }),
         )
         await expect(testTx(tx)).resolves.toBe(101)
         expect(txMock).toBeCalled()

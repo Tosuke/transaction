@@ -40,7 +40,7 @@ export class Transaction<T, Context = unknown> implements IntoTransaction<T, Con
     })
   }
 
-  map<S>(f: (x: T) => S): Transaction<S, Context> {
+  map<S, C extends Context>(f: (x: T) => S): Transaction<S, C> {
     return new Transaction(ctx => this.run(ctx).then(x => f(x)))
   }
 }
