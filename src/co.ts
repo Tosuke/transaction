@@ -5,14 +5,14 @@ import { IntoTransaction } from './intoTransaction'
 interface State<C> {
   value: unknown
   error: Error | null
-  iter: AsyncIterator<IntoTransaction<unknown, C>>
+  iter: AsyncGenerator<IntoTransaction<unknown, C>, IntoTransaction<unknown, C> | unknown, unknown>
 }
 
-type Generator<C> = () => AsyncIterable<IntoTransaction<unknown, C>>
+type AsyncGen<T, C, Y> = () => AsyncGenerator<IntoTransaction<Y, C>, IntoTransaction<T, C> | T, Y>
 
-export function co<T>(): <Context>(generator: Generator<Context>) => Transaction<T, Context>
-export function co<T, Context>(generator: Generator<Context>): Transaction<T, Context>
-export function co<T, Context>(generator?: Generator<Context>): unknown {
+export function co<T>(): <Context, Y = unknown>(generator: AsyncGen<T, Context, Y>) => Transaction<T, Context>
+export function co<T, Context, Y = unknown>(generator: AsyncGen<T, Context, Y>): Transaction<T, Context>
+export function co<T, Context, Y = unknown>(generator?: AsyncGen<T, Context, Y>): unknown {
   if (generator === undefined) {
     return coImpl
   } else {
@@ -20,7 +20,7 @@ export function co<T, Context>(generator?: Generator<Context>): unknown {
   }
 }
 
-function coImpl<T, Context>(generator: Generator<Context>): Transaction<T, Context> {
+function coImpl<T, Context, Y>(generator: AsyncGen<T, Context, Y>): Transaction<T, Context> {
   const initial: State<Context> = {
     value: undefined,
     error: null,
